@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usta Detayları</title>
+    <link rel="stylesheet" href="zanaatkardetay.css">
+    <script>
+
+    </script>
+</head>
+<body>
+    <div class="header">
+        <img src="logo.jpg" alt="Logo">
+        <h1>Zanaatkar</h1>
+        <a href="giris.html"><h2>Giriş Yap</h2></a>
+    </div>
+
+    <div class="nav">
+        <ul>
+            <li><a href="anasayfa.html">Anasayfa</a></li>
+            <li><a href="hakkımızda.html">Hakkımızda</a></li>
+            <li><a href="#">Yardım</a></li>
+        </ul>
+    </div>
+
+<div class="content">
+    <div class="details-container">
+        <div class="profile" id="profile">
+            <!-- Profil resmi ve isim buraya gelecek -->
+        </div>
+        <div class="details" id="details">
+            <!-- Kişisel detaylar buraya gelecek -->
+        </div>
+
+        <div class="stars" id="stars">
+            <!-- Yıldız bilgisi buraya gelecek -->
+        </div>
+    </div>
+
+
+<script>
+function fetchUsta(id) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "ustacek.php?ustaID=" + id, true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            var data = JSON.parse(xhr.responseText);
+            if(data.success){
+                var usta = data.usta;
+
+                // Profil
+                document.getElementById('profile').innerHTML = `
+                    <img src="${usta.Resim || 'usta.jpg'}" alt="Usta Resmi">
+                    <h2>${usta.Isim} ${usta.Soyisim}</h2>
+                `;
+
+                // Detaylar
+                document.getElementById('details').innerHTML = `
+                    <p><span>Meslek:</span> ${usta.meslek}</p>
+                    <p><span>Deneyim:</span> ${usta.DeneyimYili} Yıl</p>
+                    <p><span>Telefon:</span> ${usta.Telefon}</p>
+                    <p><span>Lokasyon:</span></p>
+                    <ul style="margin-left: 20px; color: #555;">
+                        <li>Şehir: ${usta.Sehir}</li>
+                        <li>İlçe: ${usta.Ilce}</li>
+                        <li>Semt: ${usta.Semt}</li>
+                    </ul>
+                `;
+
+
+                
+            } else {
+                document.getElementById('profile').innerHTML = "Usta bulunamadı.";
+                document.getElementById('details').innerHTML = "";
+                document.getElementById('additional-info').innerHTML = "";
+                document.getElementById('stars').innerHTML = "";
+            }
+        } else {
+            document.getElementById('profile').innerHTML = "Sunucu hatası.";
+            document.getElementById('details').innerHTML = "";
+            document.getElementById('additional-info').innerHTML = "";
+            document.getElementById('stars').innerHTML = "";
+        }
+    };
+    xhr.send();
+}
+
+// Örnek: ustaID 2'yi getir
+fetchUsta(2);
+</script>
+
+        <div class="calendar-container">
+            <h3>Takvim</h3>
+    <div class="calendar-grid"id="calendar-grid">
+
+    </div>
+    <Form action="tarihekle.php" method="post">
+        <label for="gun">Gün Seç:</label>
+        <input type="date" name="Gun" id="gun">
+    
+    <button class="randevu-al" type="submit">Gün Ekle</button>
+    </Form>
+    <script>
+var selectedDate = null;
+
+function selectDate(el) {
+    document.querySelectorAll('.calendar-box').forEach(box => box.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedDate = el.textContent;
+}
+
+function ajaxGet(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url, true);
+    xhr.onreadystatechange = function() {
+        if(xhr.readyState === 4) {
+            if(xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    callback(null, data);
+                } catch(e) {
+                    callback(e);
+                }
+            } else {
+                callback(new Error("HTTP error: " + xhr.status));
+            }
+        }
+    };
+    xhr.send();
+}
+
+function ajaxPost(url, data, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+            if (xhr.status == 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    callback(null, response);
+                } catch (e) {
+                    callback(e);
+                }
+            } else {
+                callback(new Error("HTTP error: " + xhr.status));
+            }
+        }
+    };
+    var params = Object.keys(data).map(
+      key => encodeURIComponent(key) + '=' + encodeURIComponent(data[key])
+    ).join('&');
+    xhr.send(params);
+}
+
+function loadCalendar() {
+    var grid = document.getElementById('calendar-grid');
+    grid.innerHTML = '';
+    ajaxGet('tarihcek.php', function(err, dates) {
+        if(err) return console.error(err);
+        dates.forEach(function(tarih) {
+            var div = document.createElement('div');
+            div.className = 'calendar-box';
+            div.textContent = tarih;
+            div.onclick = function() { selectDate(div); };
+            grid.appendChild(div);
+        });
+    });
+}
+
+document.querySelector('button.randevu-al').addEventListener('click', function() {
+    if(!selectedDate) {
+        alert("Lütfen bir tarih seçin!");
+        return;
+    }
+
+    var aylar = {
+      'Jan': '01', 'Feb': '02', 'Mar': '03',
+      'Apr': '04', 'May': '05', 'Jun': '06',
+      'Jul': '07', 'Aug': '08', 'Sep': '09',
+      'Oct': '10', 'Nov': '11', 'Dec': '12'
+    };
+
+    var parts = selectedDate.split(' ');
+    var gun = parts[0].padStart(2, '0');
+    var ay = aylar[parts[1]];
+    var yil = new Date().getFullYear();
+
+    var tarihVeritabaniFormat = yil + '-' + ay + '-' + gun;
+
+    ajaxPost('tarihsil.php', {tarih: tarihVeritabaniFormat}, function(err, res) {
+        if(err) return alert("Hata oluştu: " + err.message);
+        if(res.success) {
+            alert("Randevu başarıyla alındı ve tarih silindi.");
+            loadCalendar();
+            selectedDate = null;
+        } else {
+            alert("Hata: " + (res.error || "Bilinmeyen hata"));
+        }
+    });
+});
+
+window.onload = function() {
+    loadCalendar();
+};
+</script>
+    <button>Mesaj Yaz: <span style="display: block;font-size: 1rem;">555-123-4567</span></button>
+    <button>Ara: <span style="display: block;font-size: 1rem;">555-123-4567</span></button>
+        </div>
+    </div>
+    <div class="commentsmaindiv">
+        <h3>Müşteri Yorumları</h3>
+        <div class="comments-container">
+            
+            <div class="comment-column">
+                <script>
+fetch("yorumcek.php?ustaid=5")
+    .then(response => response.json())
+    .then(data => {
+        const container = document.querySelector(".comment-column");
+        container.innerHTML = ""; // varsa temizle
+        data.forEach((yorum) => {
+            const yorumHTML = `
+                <div class="comment">
+                    <h4>${yorum.Ad}</h4>
+                    <p>${yorum.Mesaj}</p>
+                    <div class="stars">Puan: ${yorum.Puan}</div>
+                </div>
+            `;
+            container.innerHTML += yorumHTML;
+        });
+    })
+    .catch(error => {
+        console.error("Yorumları çekerken hata oluştu:", error);
+    });
+
+</script>
+
+                
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>&copy; 2024 Zanaatkar. Tüm hakları saklıdır. | <a href="#">Gizlilik</a> | <a href="#">Şartlar</a></p>
+    </div>
+</body>
+</html>
